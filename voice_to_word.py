@@ -2,6 +2,7 @@ import os
 import vosk
 import pyaudio
 import path_to_word
+
 class Voice_recognizer:
     def __init__(self, model_path):
         self.model_path = model_path
@@ -39,4 +40,3 @@ class Voice_recognizer:
     def get_recognized_text(self):
         """Возвращает распознанный текст как строку."""
         return ' '.join(self.recognized_text)
-

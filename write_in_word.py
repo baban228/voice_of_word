@@ -1,6 +1,7 @@
 from docx import Document
 from docx.shared import Pt, RGBColor
 import path_to_word
+
 class Write_in_word:
     def __init__(self, filename=""):
         self.filename = filename

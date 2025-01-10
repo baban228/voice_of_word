@@ -1,7 +1,8 @@
 from write_in_word import *
 from voice_to_word import *
 from work_with_buffer import *
-import path_to_word
+from path_to_word import *
+from application import *
 import json
 import time
 
@@ -9,9 +10,10 @@ def main():
     time_from_start = time.time()
 
     # Укажите путь к вашей модели
-    file_path = path_to_word.path_file()
-    model_path = path_to_word.model_path()
-    path_buffer = path_to_word.path_buffer()
+    path = Path()
+    file_path = Path.get_path_file(path)
+    model_path = Path.get_model_path(path)
+    path_buffer = Path.get_path_buffer(path)
 
     #работа с док файлом
     recognizer = Voice_recognizer(model_path)
@@ -20,6 +22,9 @@ def main():
     #программа отладки док файла
     debug_document = Work_with_buffer(path_buffer, file_path)
     debug_document.compare_and_update()
+
+
+    application_obj = MainWindow()
 
     try:
         recognizer.load_model()  # Загружаем модель
@@ -39,7 +44,7 @@ def main():
                     result = recognizer.recognizer.Result()
                     result_json = json.loads(result)
                     result_text = result_json.get('text', '')
-                    print(result_text)
+                    application_obj.write_text(result_text)
                     if result_text == "стоп":
                         pause = True
                     if result_text == "записывай":
@@ -75,4 +80,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())

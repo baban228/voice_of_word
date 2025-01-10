@@ -1,5 +1,6 @@
 from docx import Document
 from docx.shared import Pt, RGBColor
+import os
 import path_to_word
 
 class Write_in_word:
@@ -36,3 +37,20 @@ class Write_in_word:
 
     def save(self):
         self.doc.save(path_to_word.path_file())
+
+    def open_docx_file(self, file_path):
+        if not file_path:
+            raise ValueError("Путь к файлу не может быть пустым")
+
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Файл не найден: {file_path}")
+
+        if not file_path.endswith('.docx'):
+            raise ValueError(f"Файл должен быть документом Word (.docx): {file_path}")
+
+        try:
+            doc = Document(file_path)
+            print("Файл успешно открыт")
+            # Здесь вы можете работать с документом
+        except Exception as e:
+            print(f"Ошибка при открытии файла: {e}")

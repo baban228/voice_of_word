@@ -1,5 +1,5 @@
 class Path:
-    path_file = ""
+    path_file = "1.docx"
     model_path = "vosk-model-ru"
 
     path_buffer = "auto.txt"
@@ -20,3 +20,4 @@ class Path:
         return self.path_buffer
     def set_path_buffer(self, _path_buffer):
         self.path_buffer = _path_buffer
+

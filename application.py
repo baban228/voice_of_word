@@ -1,137 +1,80 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QPushButton, QTextEdit, QVBoxLayout, QWidget
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import QThread, pyqtSignal
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import threading
 import main
 
-
-class WorkerThread(QThread):
-    finished = pyqtSignal()
-
-    def __init__(self, main_function):
+class WorkerThread(threading.Thread):
+    def __init__(self, main_function, callback):
         super().__init__()
         self.main_function = main_function
+        self.callback = callback
 
     def run(self):
-        # Здесь выполняем вашу долгую задачу, например, main.main()
         self.main_function()
-        self.finished.emit()  # Сообщаем, что задача завершена
+        self.callback()
 
-# Ваш UI-класс, как указано
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1019, 699)
-
-        # Центральный виджет
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-
-        # Устанавливаем фон бледно-голубым
-        self.centralwidget.setStyleSheet("background-color: lightblue;")
-
-        # Кнопка выбора файла
-        self.choice_file = QtWidgets.QPushButton(self.centralwidget)
-        self.choice_file.setGeometry(QtCore.QRect(20, 210, 171, 61))
-        self.choice_file.setObjectName("choice_file")
-        # Устанавливаем стиль кнопки (зеленый фон, черный жирный текст)
-        self.choice_file.setStyleSheet("background-color: green; color: black; font-weight: bold;")
-
-        # Другие кнопки
-        self.list_com = QtWidgets.QPushButton(self.centralwidget)
-        self.list_com.setGeometry(QtCore.QRect(20, 290, 171, 61))
-        self.list_com.setObjectName("list_com")
-        self.list_com.setStyleSheet("background-color: green; color: black; font-weight: bold;")
-
-        self.exit_button = QtWidgets.QPushButton(self.centralwidget)
-        self.exit_button.setGeometry(QtCore.QRect(20, 370, 171, 61))
-        self.exit_button.setObjectName("exit_button")
-        self.exit_button.setStyleSheet("background-color: green; color: black; font-weight: bold;")
-
-        # Устанавливаем центральный виджет
-        MainWindow.setCentralWidget(self.centralwidget)
-
-        # Меню
-        self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1019, 21))
-        self.menubar.setObjectName("menubar")
-        MainWindow.setMenuBar(self.menubar)
-
-        # Строка состояния
-        self.statusbar = QtWidgets.QStatusBar(MainWindow)
-        self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
-
-        # Переводим текст
-        self.retranslateUi(MainWindow)
-
-        # Подключаем слоты
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "WordEditor"))
-        self.choice_file.setText(_translate("MainWindow", "Выбрать файл"))
-        self.list_com.setText(_translate("MainWindow", "Список COM-портов"))
-        self.exit_button.setText(_translate("MainWindow", "Выход"))
-
-
-# Основное окно, которое наследует от QMainWindow и использует UI
-class MainWindow(QMainWindow, Ui_MainWindow):
+class Application(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.setupUi(self)
+
+        self.title("WordEditor")
+        self.geometry("1019x699")
+        self.configure(bg="lightblue")
+
+        # Кнопка выбора файла
+        self.choice_file = tk.Button(self, text="Выбрать файл", command=self.open_file_dialog, bg="green", fg="black", font=("bold"))
+        self.choice_file.place(x=20, y=210, width=171, height=61)
+
+        # Другие кнопки
+        self.list_com = tk.Button(self, text="Список COM-портов", bg="green", fg="black", font=("bold"))
+        self.list_com.place(x=20, y=290, width=171, height=61)
+
+        self.exit_button = tk.Button(self, text="Выход", command=self.quit, bg="green", fg="black", font=("bold"))
+        self.exit_button.place(x=20, y=370, width=171, height=61)
 
         # Панель с QTextEdit и кнопкой "Назад"
-        self.text_panel = QWidget(self.centralwidget)
-        self.text_panel.setGeometry(QtCore.QRect(200, 150, 800, 400))
-        self.text_panel.setVisible(False)  # Изначально скрыто
+        self.text_panel = tk.Frame(self, bg="lightblue")
+        self.text_panel.place(x=200, y=150, width=800, height=400)
+        self.text_panel.place_forget()  # Изначально скрыто
 
-        self.text_edit = QTextEdit(self.text_panel)
-        self.text_edit.setGeometry(50, 50, 700, 250)
-        self.text_edit.setStyleSheet("background-color: white")
-        self.text_edit.setPlaceholderText("Здесь будет выводиться текст...")
+        self.text_edit = tk.Text(self.text_panel, bg="white")
+        self.text_edit.place(x=50, y=50, width=700, height=250)
 
-        self.back_button = QPushButton('Назад', self.text_panel)
-        self.back_button.setGeometry(350, 320, 100, 50)
-        self.back_button.setStyleSheet("background-color: green; color: black; font-weight: bold;")
-        self.back_button.clicked.connect(self.show_main_buttons)
-
-
-        # Привязываем обработчики к кнопкам
-        self.choice_file.clicked.connect(self.open_file_dialog)
-        self.exit_button.clicked.connect(self.close)
+        self.back_button = tk.Button(self.text_panel, text="Назад", command=self.show_main_buttons, bg="green", fg="black", font=("bold"))
+        self.back_button.place(x=350, y=320, width=100, height=50)
 
     def open_file_dialog(self):
-        # Открытие диалога выбора файла
-        file_name, _ = QFileDialog.getOpenFileName(self, "Выберите файл")
+        file_name = filedialog.askopenfilename(title="Выберите файл")
 
         if file_name:
             print(f"Выбранный файл: {file_name}")
 
             # Скрыть старые кнопки
-            self.choice_file.setVisible(False)
-            self.list_com.setVisible(False)
-            self.exit_button.setVisible(False)
+            self.choice_file.place_forget()
+            self.list_com.place_forget()
+            self.exit_button.place_forget()
 
             # Показать текстовое поле и кнопку "Назад"
-            self.text_panel.setVisible(True)
+            self.text_panel.place(x=200, y=150, width=800, height=400)
             self.write_text("подождите идет загрузка....")
-            self.worker = WorkerThread(main.main)
-            self.worker.finished.connect(self.on_task_finished)
+            self.worker = WorkerThread(main.main, self.on_task_finished)
             self.worker.start()
 
     def on_task_finished(self):
         self.write_text("Загрузка завершена")
 
     def write_text(self, text):
-        self.text_edit.append(text)
+        self.text_edit.insert(tk.END, text + "\n")
 
     def show_main_buttons(self):
         # Скрыть панель с текстом и кнопкой "Назад"
-        self.text_panel.setVisible(False)
+        self.text_panel.place_forget()
 
         # Показать старые кнопки
-        self.choice_file.setVisible(True)
-        self.list_com.setVisible(True)
-        self.exit_button.setVisible(True)
+        self.choice_file.place(x=20, y=210, width=171, height=61)
+        self.list_com.place(x=20, y=290, width=171, height=61)
+        self.exit_button.place(x=20, y=370, width=171, height=61)
+
+if __name__ == "__main__":
+    app = Application()
+    app.mainloop()

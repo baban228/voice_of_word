@@ -24,7 +24,7 @@ def main():
     debug_document.compare_and_update()
 
 
-    application_obj = MainWindow()
+    application_obj = Application()
 
     try:
         recognizer.load_model()  # Загружаем модель
@@ -45,6 +45,7 @@ def main():
                     result_json = json.loads(result)
                     result_text = result_json.get('text', '')
                     application_obj.write_text(result_text)
+                    print(result_text)
                     if result_text == "стоп":
                         pause = True
                     if result_text == "записывай":
@@ -77,10 +78,3 @@ def main():
         # Открыть файл в режиме записи ('w'), что приведет к его очистке
         with open("auto.txt", "w", encoding="utf-8") as file:
             pass  # Ничего не пишем в файл, это очистит его
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())

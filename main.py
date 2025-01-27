@@ -6,7 +6,8 @@ from application import *
 import json
 import time
 
-def main():
+
+def main(data_queue, stop_event):
     time_from_start = time.time()
 
     # Укажите путь к вашей модели
@@ -15,48 +16,60 @@ def main():
     model_path = Path.get_model_path(path)
     path_buffer = Path.get_path_buffer(path)
 
-    #работа с док файлом
-    recognizer = Voice_recognizer(model_path)
-    doc = Write_in_word(file_path)
+    # Проверка наличия файла
+    if not file_path or not os.path.exists(file_path):
+        data_queue.put("Ошибка: Файл не найден")
+        stop_event.set()
+        return
 
-    #программа отладки док файла
+    # работа с док файлом
+    recognizer = Voice_recognizer(model_path)
+    try:
+        doc = Write_in_word(file_path)
+    except Exception as e:
+        data_queue.put(f"Ошибка при создании документа: {str(e)}")
+        stop_event.set()
+        return
+
+    # программа отладки док файла
     debug_document = Work_with_buffer(path_buffer, file_path)
     debug_document.compare_and_update()
-
-
-    application_obj = Application()
 
     try:
         recognizer.load_model()  # Загружаем модель
         recognizer.start_stream()  # Запускаем поток
-        with open("auto.txt", "r", encoding="utf-8") as buf_file:
-            recognized_text = buf_file.readlines()  # Список для хранения распознанного текста
 
+        recognized_text = []
         try:
             pause = False
-            while True:
+            while not stop_event.is_set():
                 if int(time_from_start) % 60 == 0:
-                    with open("auto.txt", "r", encoding="utf-8") as file:
+                    with open("auto.txt", "w", encoding="utf-8") as file:
                         file.write('\n'.join(recognized_text))
-                        file.close()
+
                 data = recognizer.stream.read(4000, exception_on_overflow=False)
                 if recognizer.recognizer.AcceptWaveform(data):
                     result = recognizer.recognizer.Result()
                     result_json = json.loads(result)
                     result_text = result_json.get('text', '')
-                    application_obj.write_text(result_text)
+
+                    data_queue.put(result_text)  # Put the result into the queue
+
                     print(result_text)
-                    if result_text == "стоп":
+                    if result_text.lower().strip() == "стоп":
                         pause = True
-                    if result_text == "записывай":
+                    if result_text.lower().strip() == "записывай":
                         pause = False
+                    if result_text.lower().strip() == "выход":
+                        stop_event.set()
+                        break
                     if not pause:
                         recognized_text.append(result_text)  # Добавляем текст в список
-
         except KeyboardInterrupt:
             print("Программа остановлена пользователем.")
 
         print("Распознанный текст:", ' '.join(recognized_text))  # Выводим распознанный текст
+
         state = 0
         for frase in recognized_text:
             if frase == "заголовок":
@@ -70,11 +83,20 @@ def main():
                 doc.write_paragraph(frase)
             elif state == 1:
                 doc.write_title(frase)
+
     except Exception as e:
         print(f"Ошибка: {e}")
+        data_queue.put(f"Ошибка: {str(e)}")
     finally:
         recognizer.stop_stream()  # Останавливаем поток после завершения
         doc.save()
+
         # Открыть файл в режиме записи ('w'), что приведет к его очистке
         with open("auto.txt", "w", encoding="utf-8") as file:
             pass  # Ничего не пишем в файл, это очистит его
+
+
+if __name__ == "__main__":
+    import os
+
+    main(queue.Queue(), threading.Event())  # For testing purposes only

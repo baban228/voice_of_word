@@ -1,7 +1,7 @@
 from docx import Document
 from docx.shared import Pt, RGBColor
 import os
-import path_to_word
+from path_to_word import Path
 
 class Write_in_word:
     def __init__(self, filename=""):
@@ -36,7 +36,8 @@ class Write_in_word:
         heading.style = heading_style
 
     def save(self):
-        self.doc.save(path_to_word.path_file())
+        path = Path()
+        self.doc.save(path.get_path_file(path))
 
     def open_docx_file(self, file_path):
         if not file_path:
